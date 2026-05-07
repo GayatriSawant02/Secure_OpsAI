@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 50% 5%;
+    --foreground: 210 40% 90%;
+    --card: 220 40% 8%;
+    --card-foreground: 210 40% 90%;
+    --popover: 220 40% 8%;
+    --popover-foreground: 210 40% 90%;
+    --primary: 195 100% 50%;
+    --primary-foreground: 220 50% 5%;
+    --secondary: 220 30% 15%;
+    --secondary-foreground: 210 40% 80%;
+    --muted: 220 30% 12%;
+    --muted-foreground: 215 20% 55%;
+    --accent: 195 100% 50%;
+    --accent-foreground: 220 50% 5%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 30% 18%;
+    --input: 220 30% 12%;
+    --ring: 195 100% 50%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-ops-bg text-ops-text font-sans;
+    background-color: #080c14;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0d1321;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1e2d40;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #253347;
+  }
+}
+
+@layer components {
+  .cyber-card {
+    @apply bg-ops-card border border-ops-border rounded-lg shadow-card-shadow;
+    background: linear-gradient(135deg, rgba(0,212,255,0.03) 0%, #111827 100%);
+  }
+
+  .cyber-card-glow {
+    @apply cyber-card;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,212,255,0.1), 0 0 20px rgba(0,212,255,0.05);
+  }
+
+  .severity-high {
+    @apply bg-sev-high-bg border border-sev-high-border text-sev-high;
+  }
+
+  .severity-medium {
+    @apply bg-sev-medium-bg border border-sev-medium-border text-sev-medium;
+  }
+
+  .severity-low {
+    @apply bg-sev-low-bg border border-sev-low-border text-sev-low;
+  }
+
+  .severity-info {
+    @apply bg-sev-info-bg border border-sev-info/30 text-sev-info;
+  }
+
+  .cyber-btn-primary {
+    @apply bg-ops-cyan text-ops-bg font-semibold px-4 py-2 rounded-md hover:bg-ops-cyan-dim transition-all duration-200;
+    box-shadow: 0 0 12px rgba(0,212,255,0.3);
+  }
+
+  .cyber-btn-ghost {
+    @apply border border-ops-border text-ops-text-dim px-4 py-2 rounded-md hover:border-ops-cyan hover:text-ops-cyan transition-all duration-200;
+  }
+
+  .ops-label {
+    @apply text-ops-text-muted font-mono text-xs uppercase tracking-widest;
+  }
+
+  .terminal-text {
+    @apply font-mono text-ops-green text-sm;
+  }
+
+  .glow-dot {
+    @apply w-2 h-2 rounded-full bg-ops-cyan animate-pulse-dot;
+    box-shadow: 0 0 6px rgba(0,212,255,0.8);
+  }
+
+  .threat-row {
+    @apply border-b border-ops-border/50 hover:bg-ops-surface/50 transition-colors duration-150 cursor-pointer;
+  }
+}
+
+/* Grid background */
+.grid-bg {
+  background-image: 
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Typing cursor */
+.typing-cursor::after {
+  content: "█";
+  animation: blink 1s step-end infinite;
+  color: #00d4ff;
+  font-size: 0.8em;
+  margin-left: 1px;
+}
+
+/* Chat bubbles */
+.chat-bubble-user {
+  background: linear-gradient(135deg, #0099bb, #00d4ff);
+  color: #080c14;
+}
+
+.chat-bubble-ai {
+  background: linear-gradient(135deg, #111827, #1a2332);
+  border: 1px solid #1e2d40;
+}
+
+/* Scan line animation */
+.scan-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,212,255,0.6), transparent);
+  animation: scan-line 3s linear infinite;
+}
+
+/* Number counter animation */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.count-animate {
+  animation: countUp 0.5s ease-out forwards;
+}
