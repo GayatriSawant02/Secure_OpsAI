@@ -80,9 +80,9 @@
 ### AI & Analysis
 | Technology | Purpose |
 |---|---|
-| **`@google/generative-ai`** | Gemini AI SDK for chatbot responses |
 | **Custom Rule Engine** | In-house `threatDetector.ts` with 12+ regex-based detection rules |
 | **`logParser.ts`** | Structured parser for common log formats (Apache, syslog, JSON, etc.) |
+| **`chatResponses.ts`** | Local keyword-based security response engine — no API key required |
 
 ---
 
@@ -205,7 +205,7 @@ The built-in **Security Assistant** chatbot provides:
 - General cybersecurity Q&A (OWASP, CVEs, SOC procedures)
 - Context-aware responses based on the current analysis session
 
-The chatbot is powered by the **Google Gemini API** (`@google/generative-ai`). Responses are generated with security-domain context prepended to each conversation turn, ensuring technically accurate and relevant answers.
+The chatbot runs **entirely locally** via a curated rule-based response engine (`src/lib/chatResponses.ts`). It matches user queries against security-domain keyword patterns and responds with structured, actionable guidance — with **no external API key or internet connection required**.
 
 ---
 
@@ -244,16 +244,14 @@ Dashboard / ThreatPanel / AlertsFeed ──► Rendered to UI
 
 ## ⚙️ Configuration
 
-Create a `.env` file in the project root:
+SecureOps AI requires **no external API keys** to function. Simply clone, install dependencies, and run:
 
-```env
-# Google Gemini API Key (required for AI chatbot)
-VITE_GEMINI_API_KEY=your_gemini_api_key_here
+```bash
+npm install
+npm run dev
 ```
 
-> **Note:** The application functions fully for log analysis and threat detection without an API key. The AI chatbot will fall back to curated local responses when no key is configured.
-
-To obtain a Gemini API key, visit [Google AI Studio](https://aistudio.google.com/app/apikey).
+All log analysis and chatbot responses are handled locally with no third-party service calls.
 
 ---
 

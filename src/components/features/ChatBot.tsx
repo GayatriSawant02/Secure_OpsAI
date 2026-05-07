@@ -116,7 +116,7 @@ export function ChatBot() {
                 Online
               </span>
             </div>
-            <p className="text-ops-text-muted text-xs">Powered by Gemini AI • SOC Assistant</p>
+            <p className="text-ops-text-muted text-xs">AI-Powered • SOC Assistant</p>
           </div>
         </div>
         {chatMessages.length > 0 && (
@@ -262,7 +262,7 @@ export function ChatBot() {
           </button>
         </div>
         <p className="text-ops-text-muted text-[10px] font-mono mt-2 text-center">
-          SecureOps AI • Powered by Gemini • Press Enter to send
+          SecureOps AI • Local AI Engine • Press Enter to send
         </p>
       </div>
     </div>

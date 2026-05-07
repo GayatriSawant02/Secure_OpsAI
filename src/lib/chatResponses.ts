@@ -1,6 +1,6 @@
 // ============================================================
 // SecureOps AI – AI Chatbot Response Engine
-// Uses Google Gemini AI for security queries (v1 API via REST)
+// Rule-based local response engine for security queries
 // ============================================================
 
 import type { Threat } from "@/types";
@@ -11,7 +11,8 @@ interface ChatContext {
 }
 
 /**
- * Generate an AI response based on user query and current threat context
+ * Generate a response based on user query and current threat context.
+ * Fully local — no external API calls required.
  */
 export async function generateChatResponse(
   userMessage: string,
@@ -19,85 +20,21 @@ export async function generateChatResponse(
 ): Promise<string> {
   const { threats } = context;
 
-  // Check if API key is configured
-  if (!import.meta.env.VITE_GEMINI_API_KEY) {
-    return `**API Key Not Configured**\n\nTo use real AI responses, please add your Gemini API key to the \`.env\` file:\n\n\`\`\`\nVITE_GEMINI_API_KEY=your_actual_api_key_here\n\`\`\`\n\nGet your key from: https://makersuite.google.com/app/apikey\n\nFor now, using simulated responses...`;
-  }
+  // Simulate a short "thinking" delay for UX
+  await new Promise((resolve) => setTimeout(resolve, 700 + Math.random() * 500));
 
-  try {
-    // Create context from current threats
-    const threatContext = threats.length > 0
-      ? `\n\nCurrent Threats (${threats.length} total):\n${threats.slice(0, 5).map(t =>
-          `- ${t.severity} severity ${t.type} from IP ${t.ip} at ${t.timestamp}`
-        ).join('\n')}`
-      : "\n\nNo threats currently detected.";
-
-    // Create the prompt for Gemini
-    const prompt = `You are SecureOps AI, a cybersecurity operations assistant powered by Gemini AI.
-
-${threatContext}
-
-User Query: "${userMessage}"
-
-Please provide a helpful, professional response about cybersecurity. Focus on:
-- Threat analysis and explanations
-- Security recommendations
-- Best practices
-- Actionable advice
-
-Keep responses concise but informative. Use markdown formatting for emphasis and code blocks where appropriate.`;
-
-    // Use REST API directly to ensure v1 endpoint (not v1beta)
-    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`;
-    
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt
-              }
-            ]
-          }
-        ]
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`API Error: ${error.error?.message || response.statusText}`);
-    }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    return text || "I apologize, but I couldn't generate a response. Please try rephrasing your question.";
-
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-
-    // Fallback to simulated responses if API fails
-    return `**API Error**\n\nThere was an issue connecting to Gemini AI. This could be due to:\n• Invalid API key\n• Network connectivity\n• API quota exceeded\n\nFalling back to simulated responses...\n\n${getFallbackResponse(userMessage, threats)}`;
-  }
+  return getLocalResponse(userMessage, threats);
 }
 
 /**
- * Fallback simulated responses (same as before)
+ * Rule-based local response engine
  */
-function getFallbackResponse(userMessage: string, threats: Threat[]): string {
-  // Simulate API delay
-  // await new Promise((resolve) => setTimeout(resolve, 1200 + Math.random() * 800));
-
+function getLocalResponse(userMessage: string, threats: Threat[]): string {
   const msg = userMessage.toLowerCase();
 
   // --- Greeting ---
   if (/^(hi|hello|hey|greetings|good\s+\w+)/i.test(msg)) {
-    return `Hello! I'm **SecureOps AI**, your cybersecurity operations assistant powered by Gemini.\n\nI can help you:\n• 🔍 **Analyze** detected threats\n• 💡 **Explain** attack techniques\n• 🛡️ **Recommend** defensive actions\n• 📊 **Summarize** your security posture\n\nTry asking: *"Explain the brute force attack"* or *"What should I do about high severity threats?"*`;
+    return `Hello! I'm **SecureOps AI**, your cybersecurity operations assistant.\n\nI can help you:\n• 🔍 **Analyze** detected threats\n• 💡 **Explain** attack techniques\n• 🛡️ **Recommend** defensive actions\n• 📊 **Summarize** your security posture\n\nTry asking: *"Explain the brute force attack"* or *"What should I do about high severity threats?"*`;
   }
 
   // --- Help ---
@@ -185,7 +122,6 @@ function getFallbackResponse(userMessage: string, threats: Threat[]): string {
 
   // --- Explain generic ---
   if (/explain|what is|describe|tell me about/i.test(msg)) {
-    // Try to match a known threat
     const threat = threats.find((t) =>
       msg.includes(t.type.toLowerCase()) ||
       t.type.split(" ").some((word) => msg.includes(word.toLowerCase()))
@@ -196,7 +132,7 @@ function getFallbackResponse(userMessage: string, threats: Threat[]): string {
     return `I can explain any cybersecurity threat or concept. Try being more specific:\n\n• *"Explain brute force attack"*\n• *"What is SQL injection?"*\n• *"Explain the port scan detection"*\n• *"What is a C2 server?"*\n\nOr upload a log file and I'll explain the specific threats found.`;
   }
 
-  // --- Default fallback with context ---
+  // --- Default fallback ---
   if (threats.length > 0) {
     return `I understand you're asking about: **"${userMessage}"**\n\nBased on the current analysis, your system has **${threats.length} detected threats** (${threats.filter((t) => t.severity === "High").length} high severity).\n\nI can help you with:\n• **Threat explanations** — Ask "explain [threat name]"\n• **Action plans** — Ask "what action should I take?"\n• **Security advice** — Ask about specific attack types\n• **Threat summary** — Ask "show me recent threats"\n\nWhat would you like to know more about?`;
   }
