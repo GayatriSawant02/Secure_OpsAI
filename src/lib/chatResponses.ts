@@ -1,6 +1,6 @@
 // ============================================================
 // SecureOps AI – AI Chatbot Response Engine
-// Rule-based local response engine for security queries
+// Tries Gemini API first; silently falls back to local engine
 // ============================================================
 
 import type { Threat } from "@/types";
@@ -10,9 +10,88 @@ interface ChatContext {
   lastAnalysis: string | null;
 }
 
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+const GEMINI_ENDPOINT =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
+/**
+ * Build a focused system prompt so Gemini stays in-character
+ * as a cybersecurity SOC assistant.
+ */
+function buildSystemPrompt(threats: Threat[]): string {
+  const threatSummary =
+    threats.length === 0
+      ? "No threats have been detected in the current session."
+      : `Detected threats (${threats.length} total):\n` +
+        threats
+          .slice(0, 10)
+          .map(
+            (t) =>
+              `- ${t.type} | Severity: ${t.severity} | IP: ${t.ip} | ${t.message}`
+          )
+          .join("\n");
+
+  return `You are SecureOps AI, an expert cybersecurity SOC (Security Operations Center) assistant embedded inside the SecureOps AI platform. You help security analysts understand threats, explain attack techniques, and recommend defensive actions.
+
+Current security context:
+${threatSummary}
+
+Guidelines:
+- Keep responses concise and actionable.
+- Use markdown-like formatting with **bold** for emphasis and bullet points where helpful.
+- Focus only on cybersecurity topics.
+- If asked about something unrelated, steer back to security.
+- Never reveal that you are powered by Google Gemini or any external API.`;
+}
+
+/**
+ * Call the Gemini API. Returns the response text or throws on failure.
+ */
+async function callGeminiAPI(
+  userMessage: string,
+  threats: Threat[]
+): Promise<string> {
+  const response = await fetch(`${GEMINI_ENDPOINT}?key=${GEMINI_API_KEY}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: {
+        parts: [{ text: buildSystemPrompt(threats) }],
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: userMessage }],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 1024,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(
+      `Gemini API error ${response.status}: ${errorBody}`
+    );
+  }
+
+  const data = await response.json();
+  const text: string | undefined =
+    data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (!text) {
+    throw new Error("Gemini API returned an empty or unexpected response.");
+  }
+
+  return text.trim();
+}
+
 /**
  * Generate a response based on user query and current threat context.
- * Fully local — no external API calls required.
+ * Tries Gemini API first; silently falls back to local rule-based engine.
  */
 export async function generateChatResponse(
   userMessage: string,
@@ -20,15 +99,28 @@ export async function generateChatResponse(
 ): Promise<string> {
   const { threats } = context;
 
-  // Simulate a short "thinking" delay for UX
-  await new Promise((resolve) => setTimeout(resolve, 700 + Math.random() * 500));
+  // ── Try Gemini API ──────────────────────────────────────────
+  if (GEMINI_API_KEY) {
+    try {
+      const geminiResponse = await callGeminiAPI(userMessage, threats);
+      return geminiResponse;
+    } catch (err) {
+      // Log to console only — the user will never see this
+      console.warn("[SecureOps AI] Gemini API unavailable, using local engine.", err);
+    }
+  } else {
+    console.warn("[SecureOps AI] VITE_GEMINI_API_KEY not set. Using local engine.");
+  }
 
+  // ── Fallback: local rule-based engine ───────────────────────
+  // Simulate a short "thinking" delay for UX consistency
+  await new Promise((resolve) => setTimeout(resolve, 700 + Math.random() * 500));
   return getLocalResponse(userMessage, threats);
 }
 
-/**
- * Rule-based local response engine
- */
+// ============================================================
+// Rule-based local response engine (fallback)
+// ============================================================
 function getLocalResponse(userMessage: string, threats: Threat[]): string {
   const msg = userMessage.toLowerCase();
 
